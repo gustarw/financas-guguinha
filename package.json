@@ -1,0 +1,10 @@
+{
+  "name": "financas-guguinha",
+  "version": "1.0.0",
+  "description": "Aplicação web para gerenciamento de ganhos e saques",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {}
+}
+

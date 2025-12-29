@@ -31,7 +31,23 @@ Aplicação web para gerenciamento de ganhos e saques de criptomoedas.
 
 **Importante:** O arquivo `config.js` não é commitado no git por segurança. Certifique-se de criar este arquivo antes de usar a aplicação.
 
-## Deploy
+## Deploy na Vercel
 
-Este projeto pode ser facilmente deployado na Vercel ou qualquer serviço de hospedagem estática.
+### Configuração das Variáveis de Ambiente
+
+1. Acesse o painel da Vercel do seu projeto
+2. Vá em **Settings** → **Environment Variables**
+3. Adicione as seguintes variáveis de ambiente:
+   - `SUPABASE_URL`: URL do seu projeto Supabase
+   - `SUPABASE_KEY`: Chave pública (publishable key) do Supabase
+
+### Deploy
+
+O projeto está configurado para gerar automaticamente o arquivo `config.js` durante o build a partir das variáveis de ambiente configuradas na Vercel.
+
+1. Faça push do código para o GitHub
+2. A Vercel detectará automaticamente as mudanças
+3. Durante o build, o script `build.js` será executado e gerará o `config.js` com as credenciais
+
+**Importante:** Certifique-se de que as variáveis de ambiente estão configuradas na Vercel antes de fazer o deploy, caso contrário o build falhará.
 
