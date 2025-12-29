@@ -33,21 +33,14 @@ Aplicação web para gerenciamento de ganhos e saques de criptomoedas.
 
 ## Deploy na Vercel
 
-### Configuração das Variáveis de Ambiente
+Para fazer o deploy na Vercel, você precisa criar o arquivo `config.js` diretamente no repositório:
 
-1. Acesse o painel da Vercel do seu projeto
-2. Vá em **Settings** → **Environment Variables**
-3. Adicione as seguintes variáveis de ambiente:
-   - `SUPABASE_URL`: URL do seu projeto Supabase
-   - `SUPABASE_KEY`: Chave pública (publishable key) do Supabase
+1. Acesse seu repositório no GitHub
+2. Clique em **Add file** → **Create new file**
+3. Nome do arquivo: `config.js`
+4. Use o arquivo `config.js.example` como referência e preencha com suas credenciais do Supabase
+5. Faça commit do arquivo
+6. A Vercel fará o deploy automaticamente
 
-### Deploy
-
-O projeto está configurado para gerar automaticamente o arquivo `config.js` durante o build a partir das variáveis de ambiente configuradas na Vercel.
-
-1. Faça push do código para o GitHub
-2. A Vercel detectará automaticamente as mudanças
-3. Durante o build, o script `build.js` será executado e gerará o `config.js` com as credenciais
-
-**Importante:** Certifique-se de que as variáveis de ambiente estão configuradas na Vercel antes de fazer o deploy, caso contrário o build falhará.
+**Importante:** Certifique-se de que o arquivo `config.js` está configurado corretamente antes do deploy.
 
