@@ -28,6 +28,10 @@
                         <label for="amount">Valor (R$):</label>
                         <input type="number" id="amount" step="0.01" min="0" placeholder="0.00" required>
                     </div>
+                    <div class="form-group">
+                        <label for="saqueDate">Data do Saque:</label>
+                        <input type="date" id="saqueDate" required>
+                    </div>
                     <button type="submit" class="btn-primary">Adicionar Ganho</button>
                 </form>
             </section>
@@ -54,6 +58,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

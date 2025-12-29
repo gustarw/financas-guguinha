@@ -1,0 +1,9 @@
+// Arquivo de exemplo de configuração
+// Copie este arquivo para config.js e preencha com suas credenciais
+// O arquivo config.js não será commitado no git
+
+const CONFIG = {
+    SUPABASE_URL: 'SUA_URL_DO_SUPABASE_AQUI',
+    SUPABASE_KEY: 'SUA_CHAVE_PUBLICAVEL_DO_SUPABASE_AQUI'
+};
+

@@ -1,17 +1,51 @@
-// Configuração do Supabase
-const SUPABASE_URL = 'https://ihywqcbyknqwztgnfdub.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_rmo3yEOjYTGjKwrMCa-skw_aS1X02Fl';
+// Configuração do Supabase - carregada do arquivo config.js
+// As credenciais são carregadas do arquivo config.js que não é commitado
+const SUPABASE_URL = CONFIG?.SUPABASE_URL || '';
+const SUPABASE_KEY = CONFIG?.SUPABASE_KEY || '';
 
-// Inicializar Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Validar se as credenciais foram carregadas
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.error('Erro: Credenciais do Supabase não encontradas. Certifique-se de que o arquivo config.js existe e está configurado corretamente.');
+}
+
+// Inicializar Supabase - aguardar carregamento
+let supabaseClient;
+function initSupabase() {
+    // Verificar se as credenciais estão disponíveis
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+        console.error('Erro: Credenciais do Supabase não configuradas. Verifique o arquivo config.js');
+        return false;
+    }
+    
+    // Verificar se o Supabase foi carregado via CDN
+    // O Supabase cria um objeto global 'supabase' quando carregado via CDN
+    try {
+        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            return true;
+        }
+        // Tentar também verificar se está disponível globalmente
+        if (typeof supabase !== 'undefined' && supabase.createClient) {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            return true;
+        }
+    } catch (error) {
+        console.error('Erro ao inicializar Supabase:', error);
+    }
+    return false;
+}
 
 // Array para armazenar os ganhos
 let expenses = [];
 
 // Carregar ganhos do Supabase ao iniciar
 async function loadExpenses() {
+    if (!supabaseClient) {
+        console.error('Supabase não inicializado');
+        return;
+    }
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('saques')
             .select('*')
             .order('created_at', { ascending: false });
@@ -26,7 +60,8 @@ async function loadExpenses() {
             description: item.description,
             amount: parseFloat(item.amount),
             type: item.type,
-            status: item.status
+            status: item.status,
+            saqueDate: item.saque_date || item.created_at
         }));
         
         renderExpenses();
@@ -37,16 +72,22 @@ async function loadExpenses() {
 }
 
 // Adicionar novo ganho
-async function addExpense(description, amount) {
+async function addExpense(description, amount, saqueDate) {
+    if (!supabaseClient) {
+        alert('Erro: Supabase não inicializado. Por favor, recarregue a página.');
+        console.error('Supabase não inicializado');
+        return;
+    }
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('saques')
             .insert([
                 {
                     description: description,
                     amount: parseFloat(amount),
                     type: 'saque-processando',
-                    status: 'processando'
+                    status: 'processando',
+                    saque_date: saqueDate
                 }
             ])
             .select()
@@ -54,6 +95,13 @@ async function addExpense(description, amount) {
         
         if (error) {
             console.error('Erro ao adicionar saque:', error);
+            alert('Erro ao adicionar saque: ' + error.message);
+            return;
+        }
+        
+        if (!data) {
+            console.error('Nenhum dado retornado ao adicionar saque');
+            alert('Erro: Nenhum dado retornado ao adicionar saque');
             return;
         }
         
@@ -62,7 +110,8 @@ async function addExpense(description, amount) {
             description: data.description,
             amount: parseFloat(data.amount),
             type: data.type,
-            status: data.status
+            status: data.status,
+            saqueDate: data.saque_date || data.created_at
         };
         
         expenses.push(expense);
@@ -70,15 +119,20 @@ async function addExpense(description, amount) {
         updateSummary();
     } catch (error) {
         console.error('Erro ao adicionar saque:', error);
+        alert('Erro ao adicionar saque: ' + error.message);
     }
 }
 
 // Alternar entre ganho e saque processando
 async function toggleToSaque(id) {
+    if (!supabaseClient) {
+        console.error('Supabase não inicializado');
+        return;
+    }
     const expense = expenses.find(e => e.id === id);
     if (expense && expense.type === 'ganho') {
         try {
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('saques')
                 .update({
                     type: 'saque-processando',
@@ -104,8 +158,12 @@ async function toggleToSaque(id) {
 
 // Remover ganho
 async function removeExpense(id) {
+    if (!supabaseClient) {
+        console.error('Supabase não inicializado');
+        return;
+    }
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('saques')
             .delete()
             .eq('id', id);
@@ -125,10 +183,14 @@ async function removeExpense(id) {
 
 // Atualizar status do saque para concluído
 async function updateSaqueStatus(id) {
+    if (!supabaseClient) {
+        console.error('Supabase não inicializado');
+        return;
+    }
     const expense = expenses.find(e => e.id === id);
     if (expense && expense.type === 'saque-processando' && expense.status === 'processando') {
         try {
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('saques')
                 .update({ status: 'concluido' })
                 .eq('id', id);
@@ -182,7 +244,7 @@ function renderExpenses() {
                         ${statusBadge}
                     </div>
                     <div class="expense-details">
-                        ${isGanho ? 'Recebido por: Gustavo' : 'Saque'}
+                        ${isGanho ? 'Recebido por: Gustavo' : 'Saque'} • ${formatDate(expense.saqueDate)}
                     </div>
                 </div>
                 <div class="expense-amount ${isSaqueProcessando ? 'amount-processando' : ''} ${isSaqueConcluido ? 'amount-concluido' : ''}">${formatCurrency(expense.amount)}</div>
@@ -236,11 +298,27 @@ function formatCurrency(value) {
     return 'R$ ' + formattedInteger + ',' + decimalPart;
 }
 
+// Formatar data
+function formatDate(dateString) {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
+}
+
 // Limpar todos os ganhos
 async function clearAllExpenses() {
+    if (!supabaseClient) {
+        console.error('Supabase não inicializado');
+        return;
+    }
     if (confirm('Tem certeza que deseja limpar todos os ganhos?')) {
         try {
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('saques')
                 .delete()
                 .neq('id', 0); // Deleta todos os registros
@@ -259,32 +337,65 @@ async function clearAllExpenses() {
     }
 }
 
-// Event listeners
-document.getElementById('expenseForm').addEventListener('submit', (e) => {
-    e.preventDefault();
+// Configurar event listeners
+function setupEventListeners() {
+    const expenseForm = document.getElementById('expenseForm');
+    const clearAllBtn = document.getElementById('clearAll');
     
-    const description = document.getElementById('description').value.trim();
-    const amount = document.getElementById('amount').value;
-    
-    if (description && amount > 0) {
-        addExpense(description, amount);
-        
-        // Limpar formulário
-        document.getElementById('expenseForm').reset();
-        
-        // Focar no campo de descrição
-        document.getElementById('description').focus();
+    if (expenseForm) {
+        expenseForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const description = document.getElementById('description').value.trim();
+            const amount = document.getElementById('amount').value;
+            const saqueDate = document.getElementById('saqueDate').value;
+            
+            if (description && amount > 0 && saqueDate) {
+                addExpense(description, amount, saqueDate);
+                
+                // Limpar formulário
+                expenseForm.reset();
+                
+                // Definir data padrão como hoje
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('saqueDate').value = today;
+                
+                // Focar no campo de descrição
+                document.getElementById('description').focus();
+            }
+        });
     }
-});
+    
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', clearAllExpenses);
+    }
+}
 
-document.getElementById('clearAll').addEventListener('click', clearAllExpenses);
+// Definir data padrão como hoje
+function setDefaultDate() {
+    const today = new Date().toISOString().split('T')[0];
+    const saqueDateInput = document.getElementById('saqueDate');
+    if (saqueDateInput) {
+        saqueDateInput.value = today;
+    }
+}
 
 // Carregar ganhos ao iniciar (aguardar Supabase carregar)
+function waitForSupabase() {
+    if (initSupabase()) {
+        setDefaultDate();
+        setupEventListeners();
+        loadExpenses();
+    } else {
+        setTimeout(waitForSupabase, 100);
+    }
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(loadExpenses, 100);
+        waitForSupabase();
     });
 } else {
-    setTimeout(loadExpenses, 100);
+    waitForSupabase();
 }
 
